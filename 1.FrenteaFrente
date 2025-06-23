@@ -27,6 +27,8 @@ def line_status(sensores, umbral=10000):
 
 def forward(t, speed): ib.motor_1.throttle = speed; ib.motor_2.throttle = speed; sleep(t)
 def backward(t, speed): ib.motor_1.throttle = -speed; ib.motor_2.throttle = -speed; sleep(t)
+def right (t, speed): ib.motor_1.throttle = speed; ib.motor_2.throttle = -speed; sleep(t)
+def left (t, speed): ib.motor_1.throttle = -speed; ib.motor_2.throttle = speed; sleep(t)
 def stop(): ib.motor_1.throttle = 0; ib.motor_2.throttle = 0
 def randomTurn(t, speed):
     dir = random.choice([-1, 1])
