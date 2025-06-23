@@ -1,0 +1,80 @@
+# modo_espalda.py
+import board
+from ideaboard import IdeaBoard
+from time import sleep
+from hcsr04 import HCSR04
+import random
+
+ib = IdeaBoard()
+sonar = HCSR04(board.IO25, board.IO26)
+sen1 = ib.AnalogIn(board.IO36)
+sen2 = ib.AnalogIn(board.IO39)
+sen3 = ib.AnalogIn(board.IO34)
+sen4 = ib.AnalogIn(board.IO35)
+infrarrojos = [sen1, sen2, sen3, sen4]
+
+def arreglo_a_entero(bits):
+    valor = 0
+    for bit in bits:
+        valor = (valor << 1) | bit
+    return valor
+
+def leer_sensores(sensores, umbral=10000):
+    return [int(s.value < umbral) for s in sensores]
+
+def line_status(sensores, umbral=10000):
+    return arreglo_a_entero(leer_sensores(sensores, umbral))
+
+def forward(t, speed): ib.motor_1.throttle = speed; ib.motor_2.throttle = speed; sleep(t)
+def backward(t, speed): ib.motor_1.throttle = -speed; ib.motor_2.throttle = -speed; sleep(t)
+def stop(): ib.motor_1.throttle = 0; ib.motor_2.throttle = 0
+def randomTurn(t, speed):
+    dir = random.choice([-1, 1])
+    ib.motor_1.throttle = -dir * speed
+    ib.motor_2.throttle = dir * speed
+    sleep(t)
+
+def finta():
+    backward(0.3, 0.3)
+    sleep(0.2)
+    forward(0.4, 1)
+
+def forwardCheck(t, speed, th):
+    for _ in range(int(t / 0.01)):
+        status = line_status(infrarrojos, th)
+        if status == 0:
+            forward(0.01, speed)
+        elif status <= 3:
+            forward(0.5, 1)
+        else:
+            stop(); backward(0.5, 0.3); randomTurn(0.4, 0.3)
+            break
+
+
+# modo_espalda.py
+# Mismo setup que anterior...
+# Funciones iguales a modo_frente.py
+
+# Estrategia: girar 180°, escanear y atacar
+th = 2950
+right(0.5, 0.5)  # Giro inicial de 180°
+sleep(0.2)
+
+while True:
+    status = line_status(infrarrojos, th)
+    if status != 0:
+        stop(); backward(0.5, 0.3); randomTurn(0.4, 0.3)
+        continue
+    distancia = sonar.dist_cm()
+    if 0 < distancia < 30:
+        if random.random() < 0.3:
+            finta()
+        forwardCheck(0.3, 1, th)
+    else:
+        # Busca al enemigo girando
+        for i in range(4):
+            forward(0.1, 0.3)
+            right(0.2, 0.3)
+            if sonar.dist_cm() < 30:
+                forward(0.3, 1)
+                break
