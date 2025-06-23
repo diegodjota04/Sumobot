@@ -1,4 +1,4 @@
-# modo_frente.py
+# modo_ladoalado.py
 import board
 from ideaboard import IdeaBoard
 from time import sleep
