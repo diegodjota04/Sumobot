@@ -1,0 +1,126 @@
+# modo_frente.py
+import board
+from ideaboard import IdeaBoard
+from time import sleep
+from hcsr04 import HCSR04
+import random
+
+# Inicialización de hardware
+ib = IdeaBoard()
+sonar = HCSR04(board.IO25, board.IO26)
+sen1 = ib.AnalogIn(board.IO36)
+sen2 = ib.AnalogIn(board.IO39)
+sen3 = ib.AnalogIn(board.IO34)
+sen4 = ib.AnalogIn(board.IO35)
+sensores = [sen1, sen2, sen3, sen4]
+
+# Umbral para detectar la línea blanca
+th = 2950
+
+# Funciones utilitarias
+def arreglo_a_entero(bits):
+    valor = 0
+    for bit in bits:
+        valor = (valor << 1) | bit
+    return valor
+
+def leer_sensores(sensores, umbral=10000):
+    return [int(s.value < umbral) for s in sensores]
+
+def line_status(sensores, umbral=10000):
+    return arreglo_a_entero(leer_sensores(sensores, umbral))
+
+def stop():
+    ib.motor_1.throttle = 0
+    ib.motor_2.throttle = 0
+
+# Funciones seguras de movimiento
+def forward_safe(t, speed, th):
+    for _ in range(int(t / 0.01)):
+        if line_status(sensores, th) != 0:
+            stop()
+            return False
+        ib.motor_1.throttle = speed
+        ib.motor_2.throttle = speed
+        sleep(0.01)
+    stop()
+    return True
+
+def backward_safe(t, speed, th):
+    for _ in range(int(t / 0.01)):
+        if line_status(sensores, th) != 0:
+            stop()
+            return False
+        ib.motor_1.throttle = -speed
+        ib.motor_2.throttle = -speed
+        sleep(0.01)
+    stop()
+    return True
+
+def left_safe(t, speed, th):
+    for _ in range(int(t / 0.01)):
+        if line_status(sensores, th) != 0:
+            stop()
+            return
+        ib.motor_1.throttle = -speed
+        ib.motor_2.throttle = speed
+        sleep(0.01)
+    stop()
+
+def right_safe(t, speed, th):
+    for _ in range(int(t / 0.01)):
+        if line_status(sensores, th) != 0:
+            stop()
+            return
+        ib.motor_1.throttle = speed
+        ib.motor_2.throttle = -speed
+        sleep(0.01)
+    stop()
+
+def randomTurn_safe(t, speed, th):
+    dir = random.choice([-1, 1])
+    for _ in range(int(t / 0.01)):
+        if line_status(sensores, th) != 0:
+            stop()
+            return
+        ib.motor_1.throttle = -dir * speed
+        ib.motor_2.throttle = dir * speed
+        sleep(0.01)
+    stop()
+
+def finta(th):
+    backward_safe(0.3, 0.3, th)
+    sleep(0.1)
+    forward_safe(0.4, 1, th)
+
+def forwardCheck(t, speed, th):
+    for _ in range(int(t / 0.01)):
+        status = line_status(sensores, th)
+        if status == 0:
+            forward_safe(0.01, speed, th)
+        elif status <= 3:
+            forward_safe(0.5, 1, th)
+        else:
+            stop()
+            backward_safe(0.5, 0.3, th)
+            randomTurn_safe(0.4, 0.3, th)
+            break
+
+# Bucle principal de comportamiento
+while True:
+    # Verificar línea blanca
+    if line_status(sensores, th) != 0:
+        stop()
+        backward_safe(0.4, 0.3, th)
+        randomTurn_safe(0.3, 0.3, th)
+        continue
+
+    # Leer distancia
+    distancia = sonar.dist_cm()
+    if 0 < distancia < 60:
+        if random.random() < 0.2:
+            finta(th)
+        else:
+            forwardCheck(0.3, 1, th)
+    else:
+        right_safe(0.1, 0.3, th)
