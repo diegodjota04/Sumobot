@@ -53,7 +53,7 @@ def forwardCheck(t, speed, th):
             break
 
 # Estrategia: atacar de frente con posible finta
-th = 2950
+th = 27875
 while True:
     status = line_status(sensores, th)
     if status != 0:
