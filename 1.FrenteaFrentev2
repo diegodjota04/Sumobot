@@ -15,7 +15,7 @@ sen4 = ib.AnalogIn(board.IO35)
 sensores = [sen1, sen2, sen3, sen4]
 
 # Umbral para detectar la línea blanca
-th = 2950
+th = 27974
 
 # Funciones utilitarias
 def arreglo_a_entero(bits):
