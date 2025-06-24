@@ -1,0 +1,47 @@
+import board
+from ideaboard import IdeaBoard
+from time import sleep
+
+# Inicializar IdeaBoard y sensores
+ib = IdeaBoard()
+sen1 = ib.AnalogIn(board.IO36)
+sen2 = ib.AnalogIn(board.IO39)
+sen3 = ib.AnalogIn(board.IO34)
+sen4 = ib.AnalogIn(board.IO35)
+sensores = [sen1, sen2, sen3, sen4]
+
+def leer_promedio(n=10, delay=0.1):
+    valores = [[] for _ in sensores]
+    for _ in range(n):
+        for i, s in enumerate(sensores):
+            valores[i].append(s.value)
+        sleep(delay)
+    promedios = [sum(v) // len(v) for v in valores]
+    return promedios
+
+print("=== CALIBRACIÓN DE SENSORES IR ===")
+print("Este script medirá los valores promedio sobre negro y blanco.")
+input("Coloca los sensores sobre el ÁREA NEGRA y presiona Enter...")
+
+negro = leer_promedio()
+print("\nLecturas promedio sobre NEGRO:")
+for i, val in enumerate(negro):
+    print(f"  Sensor {i+1}: {val}")
+
+input("\nAhora coloca los sensores sobre el ÁREA BLANCA y presiona Enter...")
+
+blanco = leer_promedio()
+print("\nLecturas promedio sobre BLANCO:")
+for i, val in enumerate(blanco):
+    print(f"  Sensor {i+1}: {val}")
+
+# Calcular umbral promedio por sensor y global
+umbrales_ind = [(n + b) // 2 for n, b in zip(negro, blanco)]
+umbral_global = sum(umbrales_ind) // len(umbrales_ind)
+
+print("\n=== RESULTADOS DE CALIBRACIÓN ===")
+for i, th in enumerate(umbrales_ind):
+    print(f"  Umbral Sensor {i+1}: {th}")
+
+print(f"\n➡️  Umbral sugerido global (promedio): {umbral_global}")
+print("\nCopia este valor en tu código como:\n    th = {}".format(umbral_global))
