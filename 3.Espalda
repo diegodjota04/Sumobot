@@ -11,7 +11,7 @@ sen1 = ib.AnalogIn(board.IO36)
 sen2 = ib.AnalogIn(board.IO39)
 sen3 = ib.AnalogIn(board.IO34)
 sen4 = ib.AnalogIn(board.IO35)
-infrarrojos = [sen1, sen2, sen3, sen4]
+sensores = [sen1, sen2, sen3, sen4]
 
 def arreglo_a_entero(bits):
     valor = 0
@@ -43,7 +43,7 @@ def finta():
 
 def forwardCheck(t, speed, th):
     for _ in range(int(t / 0.01)):
-        status = line_status(infrarrojos, th)
+        status = line_status(sensores, th)
         if status == 0:
             forward(0.01, speed)
         elif status <= 3:
@@ -63,7 +63,7 @@ right(0.5, 0.5)  # Giro inicial de 180°
 sleep(0.2)
 
 while True:
-    status = line_status(infrarrojos, th)
+    status = line_status(sensores, th)
     if status != 0:
         stop(); backward(0.5, 0.3); randomTurn(0.4, 0.3)
         continue
