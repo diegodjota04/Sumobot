@@ -114,14 +114,21 @@ while True:
             finta()
         else:
             ataque_frontal()
-    elif distancia < 100:
+
+    elif 60 <= distancia < 100:
         print(">> Oponente detectado lejos: acercándose")
         avanzar(0.5)
         sleep(0.2)
         parar()
+
+elif 100 <= distancia <120:
+print(">> Buscando oponente...")
+        girar_der(0.3)
+        sleep(0.1)
+        parar()
+
     else:
         print(">> Buscando oponente...")
         girar_der(0.3)
         sleep(0.1)
         parar()
-
