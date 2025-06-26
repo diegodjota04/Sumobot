@@ -1,200 +1,127 @@
 import board
-
 from ideaboard import IdeaBoard
-
 from time import sleep
-
 from hcsr04 import HCSR04
-
 import random
 
 ib = IdeaBoard()
-
 sonar = HCSR04(board.IO25, board.IO26)
 
 # Sensores de línea (IR)
-
 sen1 = ib.AnalogIn(board.IO36)
-
 sen2 = ib.AnalogIn(board.IO39)
-
 sen3 = ib.AnalogIn(board.IO34)
-
 sen4 = ib.AnalogIn(board.IO35)
-
 sensores = [sen1, sen2, sen3, sen4]
 
 # Umbral calibrado para línea negra
-
-UMBRAL_LINEA = 28898
+UMBRAL_LINEA = 23446
 
 # === FUNCIONES DE SENSOR ===
-
 def leer_sensores(umbral=UMBRAL_LINEA):
-
     valores = [s.value for s in sensores]
-
     estado = [int(v < umbral) for v in valores]
-
     print("Sensores:", valores, "->", estado)
-
     return estado
 
 def hay_linea():
-
     return any(leer_sensores())
 
 # === MOVIMIENTO ===
-
 def avanzar(speed): ib.motor_1.throttle = speed; ib.motor_2.throttle = speed
-
 def retroceder(speed): ib.motor_1.throttle = -speed; ib.motor_2.throttle = -speed
-
 def girar_der(speed): ib.motor_1.throttle = speed; ib.motor_2.throttle = -speed
-
 def girar_izq(speed): ib.motor_1.throttle = -speed; ib.motor_2.throttle = speed
-
 def parar(): ib.motor_1.throttle = 0; ib.motor_2.throttle = 0
 
 def random_turn(tiempo, speed):
-
     if random.random() < 0.5:
-
         girar_izq(speed)
-
     else:
-
         girar_der(speed)
-
     sleep(tiempo)
-
     parar()
 
 # === ATAQUE ===
-
 def finta():
-
     print(">> FINTA")
-
     retroceder(0.4)
-
     sleep(0.3)
-
     avanzar(1)
-
     sleep(0.4)
-
     parar()
 
 def ataque_frontal(speed=1.0, duracion=1.0):
-
     print(">> ATAQUE FRONTAL")
-
     tiempo = 0
-
     intervalo = 0.05
 
     while tiempo < duracion:
-
         if hay_linea():
-
             print(">> Línea detectada durante ataque. Retirada.")
-
             parar()
-
             retroceder(0.4)
-
             sleep(0.4)
-
             random_turn(0.4, 0.4)
-
             return
 
         sensores_estado = leer_sensores()
-
-        # Corrección simple de dirección
-
         if sensores_estado == [0, 0, 1, 0] or sensores_estado == [0, 1, 1, 0]:
-
             avanzar(speed)
-
-        elif sensores_estado[0]:  # línea a la izquierda
-
+        elif sensores_estado[0]:
             girar_der(0.3)
-
-        elif sensores_estado[3]:  # línea a la derecha
-
+        elif sensores_estado[3]:
             girar_izq(0.3)
-
         else:
-
             avanzar(speed)
 
         sleep(intervalo)
-
         tiempo += intervalo
 
     parar()
 
+# === INICIO SEGURO ===
+print("Inicializando... Verificando línea")
+while hay_linea():
+    print(">> Línea detectada al iniciar. Girando para evitar salir.")
+    random_turn(0.3, 0.4)
+    sleep(0.2)
+
+print(">> Posición segura. Comenzando búsqueda.")
+avanzar(0.3)
+sleep(0.3)
+parar()
+
 # === BUCLE PRINCIPAL ===
-
 while True:
-
     if hay_linea():
-
         print(">> Línea detectada: evasión")
-
         parar()
-
         retroceder(0.4)
-
         sleep(0.4)
-
         random_turn(0.4, 0.4)
-
         continue
 
     try:
-
         distancia = sonar.dist_cm()
-
         print("Distancia:", distancia)
-
     except RuntimeError:
-
         print("Error en sonar")
-
-        distancia = 150  # No detectó nada, asumir lejos
+        distancia = 150
 
     if 0 < distancia < 60:
-
         if random.random() < 0.2:
-
             finta()
-
         else:
-
             ataque_frontal()
-
     elif distancia < 100:
-
         print(">> Oponente detectado lejos: acercándose")
-
         avanzar(0.5)
-
         sleep(0.2)
-
         parar()
-
     else:
-
         print(">> Buscando oponente...")
-
         girar_der(0.3)
-
         sleep(0.1)
-
         parar()
- 
-
 
