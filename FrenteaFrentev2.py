@@ -26,17 +26,45 @@ def leer_sensores(sensores, umbral=10000):
 def line_status(sensores, umbral=10000):
     return arreglo_a_entero(leer_sensores(sensores, umbral))
 
-def forward(t, speed): ib.motor_1.throttle = speed; ib.motor_2.throttle = speed; sleep(t)
-def backward(t, speed): ib.motor_1.throttle = -speed; ib.motor_2.throttle = -speed; sleep(t)
-def right(t, speed): ib.motor_1.throttle = speed; ib.motor_2.throttle = -speed; sleep(t)
-def left(t, speed): ib.motor_1.throttle = -speed; ib.motor_2.throttle = speed; sleep(t)
-def stop(): ib.motor_1.throttle = 0; ib.motor_2.throttle = 0
 
+def forward(t, speed):
+    print(f"Avanzando: {t:.2f}s a velocidad {speed}")
+    ib.motor_1.throttle = speed
+    ib.motor_2.throttle = speed
+    sleep(t)
+
+def backward(t, speed):
+    print(f"Retrocediendo: {t:.2f}s a velocidad {speed}")
+    ib.motor_1.throttle = -speed
+    ib.motor_2.throttle = -speed
+    sleep(t)
+
+def right(t, speed):
+    print(f"Girando a la derecha: {t:.2f}s a velocidad {speed}")
+    ib.motor_1.throttle = speed
+    ib.motor_2.throttle = -speed
+    sleep(t)
+
+def left(t, speed):
+    print(f"Girando a la izquierda: {t:.2f}s a velocidad {speed}")
+    ib.motor_1.throttle = -speed
+    ib.motor_2.throttle = speed
+    sleep(t)
+
+def stop():
+    print("Detenido")
+    ib.motor_1.throttle = 0
+    ib.motor_2.throttle = 0
+
+# Mejora a randomTurn para evitar bucles
 def randomTurn(t, speed):
     dir = random.choice([-1, 1])
+    print(f"Giro aleatorio {'izquierda' if dir == -1 else 'derecha'}: {t:.2f}s a velocidad {speed}")
     ib.motor_1.throttle = -dir * speed
     ib.motor_2.throttle = dir * speed
     sleep(t)
+    stop()
+
 
 def leer_distancia_filtrada(intentos=5):
     lecturas = []
