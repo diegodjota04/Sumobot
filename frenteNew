@@ -1,0 +1,120 @@
+import board
+from ideaboard import IdeaBoard
+from time import sleep, time
+from hcsr04 import HCSR04
+import random
+
+ib = IdeaBoard()
+sonar = HCSR04(board.IO25, board.IO26)
+
+# Sensores de línea (IR)
+sen1 = ib.AnalogIn(board.IO36)
+sen2 = ib.AnalogIn(board.IO39)
+sen3 = ib.AnalogIn(board.IO34)
+sen4 = ib.AnalogIn(board.IO35)
+sensores = [sen1, sen2, sen3, sen4]
+
+UMBRAL_LINEA = 23446
+
+# === FUNCIONES DE SENSOR ===
+def leer_sensores(umbral=UMBRAL_LINEA):
+    valores = [s.value for s in sensores]
+    estado = [int(v < umbral) for v in valores]
+    return estado
+
+def hay_linea():
+    return any(leer_sensores())
+
+# === MOVIMIENTO ===
+def avanzar(speed): ib.motor_1.throttle = speed; ib.motor_2.throttle = speed
+def retroceder(speed): ib.motor_1.throttle = -speed; ib.motor_2.throttle = -speed
+def girar_der(speed): ib.motor_1.throttle = speed; ib.motor_2.throttle = -speed
+def girar_izq(speed): ib.motor_1.throttle = -speed; ib.motor_2.throttle = speed
+def parar(): ib.motor_1.throttle = 0; ib.motor_2.throttle = 0
+
+def random_turn(tiempo=0.35, speed=0.4):
+    if random.random() < 0.5:
+        girar_izq(speed)
+    else:
+        girar_der(speed)
+    sleep(tiempo)
+    parar()
+
+# === ATAQUE Y EVASIÓN MEJORADOS ===
+def finta():
+    # Finta mejorada: retrocede y luego gira rápido antes de avanzar
+    retroceder(0.7)
+    sleep(0.25)
+    random_turn(0.15, 0.7)
+    avanzar(1)
+    sleep(0.35)
+    parar()
+
+def ataque_frontal(speed=1.0, duracion=1.0):
+    inicio = time()
+    while time() - inicio < duracion:
+        if hay_linea():
+            parar()
+            # Retroceso rápido, con pequeño giro para evitar quedarse en la línea
+            retroceder(0.7)
+            sleep(0.28)
+            random_turn(0.25, 0.5)
+            return
+        sensores_estado = leer_sensores()
+        # Ataque sesgado para buscar el costado
+        if random.random() < 0.18:
+            if random.random() < 0.5:
+                girar_der(0.6)
+            else:
+                girar_izq(0.6)
+            sleep(0.06)
+        avanzar(speed)
+        sleep(0.025)
+    parar()
+
+# === INICIO SEGURO ===
+print("Inicializando... Verificando línea")
+while hay_linea():
+    print(">> Línea detectada al iniciar. Girando para evitar salir.")
+    random_turn(0.3, 0.5)
+    sleep(0.15)
+
+print(">> Posición segura. Comenzando búsqueda.")
+avanzar(0.35)
+sleep(0.28)
+parar()
+
+# === BUCLE PRINCIPAL ===
+while True:
+    if hay_linea():
+        parar()
+        retroceder(0.7)
+        sleep(0.28)
+        random_turn(0.25, 0.55)
+        continue
+
+    try:
+        distancia = sonar.dist_cm()
+    except RuntimeError:
+        distancia = 150
+
+    if 0 < distancia < 60:
+        # Aumenta la probabilidad de finta y ataque lateral aleatorio
+        if random.random() < 0.30:
+            finta()
+        else:
+            ataque_frontal(duracion=0.9)
+    elif 60 <= distancia < 100:
+        avanzar(0.52)
+        sleep(0.13)
+        parar()
+    else:
+        # Buscando oponente, giro y microavance para no quedarse estático
+        if random.random() < 0.55:
+            girar_der(0.36)
+        else:
+            girar_izq(0.36)
+        sleep(0.08)
+        avanzar(0.24)
+        sleep(0.09)
+        parar()
